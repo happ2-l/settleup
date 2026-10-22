@@ -17,6 +17,7 @@ import {
   setPayer,
   setPayment,
   setTotal,
+  setTransferMode,
   setWeight,
   toggleAttendance,
   toggleEater,
@@ -175,9 +176,21 @@ describe('화면에서 입력한 그대로 정산된다', () => {
       setPayer(toggleAttendance(toggleAttendance(setTotal(r, 60_000), 지은!, m.members), 현우!, m.members), 영희!),
     );
 
+    // 기본은 각자 그 차수 결제한 사람에게
     const computed = compute(m);
     if (!computed.ok) throw computed.error;
     expect(computed.result.transfers).toEqual([
+      { from: 영희, to: 철수, amount: 20_000 },
+      { from: 민수, to: 철수, amount: 40_000 },
+      { from: 지은, to: 철수, amount: 20_000 },
+      { from: 현우, to: 철수, amount: 20_000 },
+      { from: 민수, to: 영희, amount: 20_000 },
+    ]);
+
+    // 송금 횟수 최소로 바꾸면 차수를 합쳐 3건
+    const minimal = compute(setTransferMode(m, 'minimal'));
+    if (!minimal.ok) throw minimal.error;
+    expect(minimal.result.transfers).toEqual([
       { from: 민수, to: 철수, amount: 60_000 },
       { from: 지은, to: 철수, amount: 20_000 },
       { from: 현우, to: 철수, amount: 20_000 },

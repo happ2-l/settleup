@@ -1194,6 +1194,22 @@ input::placeholder {
   color: var(--muted);
 }
 
+.receipt-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.receipt-mode .link {
+  padding: 2px 0;
+  font-size: 13px;
+}
+
 .receipt-done {
   font-family: var(--font-display);
   font-size: 20px;
@@ -1580,6 +1596,19 @@ input::placeholder {
 .image-preview img {
   display: block;
   width: 100%;
+}
+
+/* 넓은 표 이미지는 너무 작아지지 않게 옆으로 밀어서 본다 */
+.image-preview.is-wide {
+  overflow-x: auto;
+}
+
+.image-preview.is-wide img {
+  width: auto;
+  min-width: 100%;
+  max-width: none;
+  height: auto;
+  max-height: 56dvh;
 }
 
 .image-preview .hint {

@@ -1,5 +1,5 @@
 import type { Item, MemberId, Participant, Transfer } from '../engine';
-import { ALCOHOL, shortId, type Friend, type Meeting, type MeetingRound, type PayInfo } from './model';
+import { ALCOHOL, shortId, type Friend, type Meeting, type MeetingRound, type PayInfo, type TransferMode } from './model';
 import { cleanPay } from './pay';
 
 // 화면에서 쓰는 수정 함수들. 모두 새 객체를 돌려준다.
@@ -209,6 +209,8 @@ export function setAllEaters(r: MeetingRound, index: number, all: boolean): Meet
 }
 
 // ── 송금 ──────────────────────────────────────────────
+
+export const setTransferMode = (m: Meeting, transferMode: TransferMode) => touch({ ...m, transferMode });
 
 export const markSent = (m: Meeting, t: Transfer) => touch({ ...m, repayments: [...m.repayments, t] });
 

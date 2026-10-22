@@ -8,14 +8,14 @@ import { accountCopyText, hasPay } from './pay';
 // 화면 CSS를 캡처하지 않고 캔버스에 직접 그려서 어느 폰에서나 같은 모양이 나온다.
 
 const W = 1080;
-const MARGIN = 64;
-const PAD = 64;
-const TOOTH = 16;
+export const MARGIN = 64;
+export const PAD = 64;
+export const TOOTH = 16;
 const LEFT = MARGIN + PAD;
 const RIGHT = W - MARGIN - PAD;
 const CONTENT = RIGHT - LEFT;
 
-const COLOR = {
+export const COLOR = {
   table: '#2b6a4c',
   paper: '#ffffff',
   ink: '#141917',
@@ -32,9 +32,9 @@ const FONT = {
   mono: '"IBM Plex Mono", "Nanum Gothic Coding", ui-monospace, Menlo, monospace',
 };
 
-const font = (family: keyof typeof FONT, size: number, weight = 400) => `${weight} ${size}px ${FONT[family]}`;
+export const font = (family: keyof typeof FONT, size: number, weight = 400) => `${weight} ${size}px ${FONT[family]}`;
 
-type Width = (text: string) => number;
+export type Width = (text: string) => number;
 
 /** 폭에 맞춰 줄바꿈. 띄어쓰기에서 끊을 수 있으면 거기서, 아니면 글자 단위로 */
 export function wrapText(text: string, maxWidth: number, width: Width): string[] {
@@ -105,15 +105,19 @@ export async function renderReceiptImage(meeting: Meeting, result: SettlementRes
     y += block.height;
   }
 
+  return toPng(canvas);
+}
+
+export function toPng(canvas: HTMLCanvasElement): Promise<Blob> {
   return new Promise((resolve, reject) =>
     canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('이미지를 만들지 못했어요'))), 'image/png'),
   );
 }
 
-/** 공유·저장할 때 쓸 파일 이름 */
-export function imageFileName(meeting: Meeting): string {
+/** 공유·저장할 때 쓸 파일 이름. 표 이미지는 이름에 '표'를 붙인다 */
+export function imageFileName(meeting: Meeting, kind: 'receipt' | 'table' = 'receipt'): string {
   const title = (meeting.title || '정산').replace(/[\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim();
-  return `${title} ${meeting.date}.png`;
+  return `${title}${kind === 'table' ? ' 표' : ''} ${meeting.date}.png`;
 }
 
 function layout(ctx: CanvasRenderingContext2D, meeting: Meeting, result: SettlementResult) {
@@ -413,7 +417,7 @@ function avatarRow(ctx: CanvasRenderingContext2D, mid: number, ids: string[], la
   ctx.fillText(`${ids.length}명`, x - AVATAR_STEP + AVATAR / 2 + 14, mid + 1);
 }
 
-function paperPath(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number) {
+export function paperPath(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number) {
   const teeth = Math.round((x1 - x0) / (TOOTH * 2));
   const step = (x1 - x0) / teeth;
   ctx.beginPath();
@@ -473,7 +477,7 @@ function barcode(ctx: CanvasRenderingContext2D, seed: string, top: number) {
   }
 }
 
-async function loadFonts(text: string) {
+export async function loadFonts(text: string) {
   if (!document.fonts?.load) return;
   const specs = [font('display', 40), font('body', 30), font('body', 30, 500), font('body', 30, 700), font('mono', 30), font('mono', 30, 600)];
   const sample = `${text}0123456789,+−→원`;

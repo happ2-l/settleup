@@ -59,6 +59,12 @@ export interface Gathering {
 export interface SettleOptions {
   /** 각자 몫을 이 단위(10, 100, 1000원)로 맞춤. 단위 미만 잔돈은 결제자가 떠안음. 기본 1 */
   unit?: number;
+  /**
+   * 송금 목록을 만드는 방식. 기본 'minimal'
+   * - minimal: 차수를 모두 합쳐 송금 횟수가 가장 적게. 결제자가 받을 돈이 다른 사람을 거쳐 갈 수 있음
+   * - direct: 각자 그 차수 결제자에게. 같은 두 사람 사이에 오가는 돈만 상계
+   */
+  transfers?: 'minimal' | 'direct';
 }
 
 export interface RoundResult {

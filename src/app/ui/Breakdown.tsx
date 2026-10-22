@@ -6,10 +6,11 @@ import { Avatars } from './Avatars';
 interface Props {
   meeting: Meeting;
   result: SettlementResult;
+  onShareImage: () => void;
 }
 
 /** 따지고 싶은 사람을 위한 표: 사람 × 차수 부담액, 예외, 낸 돈, 받을·보낼 돈 */
-export function Breakdown({ meeting, result }: Props) {
+export function Breakdown({ meeting, result, onShareImage }: Props) {
   const name = (id: string) => meeting.members.find((f) => f.id === id)?.name ?? id;
   const hasRepayments = meeting.repayments.length > 0;
   const signed = (v: number) => (v > 0 ? `+${num(v)}` : v < 0 ? `−${num(-v)}` : '0');
@@ -84,6 +85,9 @@ export function Breakdown({ meeting, result }: Props) {
         </table>
       </div>
       <p className="hint">— 는 그 차수에 없었던 사람이에요. 술X·반만·고정·면제는 그 차수에서의 예외예요. 표가 넓으면 옆으로 밀어 보세요.</p>
+      <button type="button" className="btn btn-outline btn-block" onClick={onShareImage}>
+        표를 이미지로 공유
+      </button>
     </details>
   );
 }

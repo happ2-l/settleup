@@ -195,5 +195,112 @@ describe('settle: 무작위 모임에서도 항상 맞아떨어진다', () => {
 
     const nonZero = result.members.filter((m) => m.balance !== 0).length;
     expect(result.transfers.length).toBeLessThanOrEqual(Math.max(0, nonZero - 1));
+
+    // 결제한 사람에게 바로 보내는 방식도 잔액을 정확히 0으로 만든다
+    const sent = g.rounds.length > 0 && seed % 3 === 0 ? result.transfers.slice(0, 1) : [];
+    const direct = settle({ ...g, repayments: sent }, { unit, transfers: 'direct' });
+    const left = Object.fromEntries(direct.members.map((m) => [m.memberId, m.balance]));
+    for (const t of direct.transfers) {
+      expect(t.amount).toBeGreaterThan(0);
+      expect(t.from).not.toBe(t.to);
+      left[t.from]! += t.amount;
+      left[t.to]! -= t.amount;
+    }
+    expect(Object.values(left).every((v) => v === 0)).toBe(true);
+  });
+});
+
+describe('송금 방식: 결제한 사람에게 바로', () => {
+  const people: Member[] = [{ id: 'me', name: '나' }, { id: 'x', name: 'X' }, { id: 'y', name: 'Y' }];
+  const all: Participant[] = people.map((p) => ({ memberId: p.id }));
+  const forgotten = (payer: string): Gathering => ({
+    members: people,
+    rounds: [
+      { id: 'r1', total: 90_000, participants: all, payments: { me: 90_000 } },
+      { id: 'r2', total: 30_000, participants: all, payments: { [payer]: 30_000 } },
+    ],
+  });
+
+  it('최소 송금은 X가 받을 돈을 X가 낼 돈과 상계해서 X에게 보낼 게 없어 보인다', () => {
+    expect(settle(forgotten('x')).transfers).toEqual([
+      { from: 'y', to: 'me', amount: 40_000 },
+      { from: 'x', to: 'me', amount: 10_000 },
+    ]);
+  });
+
+  it('결제한 사람에게 바로: 2차 몫은 X에게, 나와 X 사이만 상계', () => {
+    expect(settle(forgotten('x'), { transfers: 'direct' }).transfers).toEqual([
+      { from: 'x', to: 'me', amount: 20_000 },
+      { from: 'y', to: 'me', amount: 30_000 },
+      { from: 'y', to: 'x', amount: 10_000 },
+    ]);
+  });
+
+  it('예시 모임: 각 차수 결제자에게, 두 사람 사이에 오가는 돈만 상계', () => {
+    expect(settle(gathering, { transfers: 'direct' }).transfers).toEqual([
+      { from: '영희', to: '철수', amount: 20_000 },
+      { from: '민수', to: '철수', amount: 40_000 },
+      { from: '지은', to: '철수', amount: 20_000 },
+      { from: '현우', to: '철수', amount: 20_000 },
+      { from: '민수', to: '영희', amount: 20_000 },
+    ]);
+  });
+
+  it('여러 명이 결제하면 결제자 본인 몫을 먼저 빼고 나머지를 차례로 채운다', () => {
+    const four: Member[] = ['a', 'b', 'c', 'd'].map((id) => ({ id, name: id }));
+    const g: Gathering = {
+      members: four,
+      rounds: [{ id: 'r', total: 100_000, participants: four.map((m) => ({ memberId: m.id })), payments: { a: 60_000, b: 40_000 } }],
+    };
+    expect(settle(g, { transfers: 'direct' }).transfers).toEqual([
+      { from: 'c', to: 'a', amount: 25_000 },
+      { from: 'd', to: 'a', amount: 10_000 },
+      { from: 'd', to: 'b', amount: 15_000 },
+    ]);
+  });
+
+  it('이미 보낸 돈은 빼고 남은 것만', () => {
+    const g = { ...gathering, repayments: [{ from: '민수', to: '철수', amount: 40_000 }] };
+    const transfers = settle(g, { transfers: 'direct' }).transfers;
+    expect(transfers).not.toContainEqual(expect.objectContaining({ from: '민수', to: '철수' }));
+    expect(transfers).toContainEqual({ from: '민수', to: '영희', amount: 20_000 });
+  });
+});
+
+describe('실제 사례: 까먹은 피자를 송우가 낸 것으로 추가', () => {
+  // 1~7차는 햅도가 다 냈고(304,100원), 각자 부담은 아래와 같았다. 8차 피자 47,000원은 송우가 냈고 5명이 9,400원씩
+  const names = ['햅도', '송우', '신동', '핑핑', '런고', '고콰니', '윤'];
+  const before: Record<string, number> = { 햅도: 59_500, 송우: 59_400, 신동: 59_400, 핑핑: 30_900, 런고: 26_400, 고콰니: 47_000, 윤: 21_500 };
+  const g: Gathering = {
+    members: names.map((n) => ({ id: n, name: n })),
+    rounds: [
+      { id: '1~7차', total: 304_100, participants: names.map((n) => ({ memberId: n, fixed: before[n]! })), payments: { 햅도: 304_100 } },
+      {
+        id: '8차 피자',
+        total: 47_000,
+        participants: ['햅도', '송우', '신동', '핑핑', '고콰니'].map((memberId) => ({ memberId })),
+        payments: { 송우: 47_000 },
+      },
+    ],
+  };
+
+  it('결제한 사람에게 바로: 송우는 햅도에게 59,400 − 9,400 = 50,000원, 피자 먹은 사람은 송우에게 9,400원', () => {
+    expect(settle(g, { transfers: 'direct' }).transfers).toEqual([
+      { from: '송우', to: '햅도', amount: 50_000 },
+      { from: '신동', to: '햅도', amount: 59_400 },
+      { from: '핑핑', to: '햅도', amount: 30_900 },
+      { from: '런고', to: '햅도', amount: 26_400 },
+      { from: '고콰니', to: '햅도', amount: 47_000 },
+      { from: '윤', to: '햅도', amount: 21_500 },
+      { from: '신동', to: '송우', amount: 9_400 },
+      { from: '핑핑', to: '송우', amount: 9_400 },
+      { from: '고콰니', to: '송우', amount: 9_400 },
+    ]);
+  });
+
+  it('최소 송금은 피자값이 햅도를 거쳐 가서 송우 → 햅도가 21,800원이 된다 (합계는 같음)', () => {
+    const transfers = settle(g).transfers;
+    expect(transfers).toContainEqual({ from: '송우', to: '햅도', amount: 21_800 });
+    expect(transfers.every((t) => t.to === '햅도')).toBe(true);
   });
 });

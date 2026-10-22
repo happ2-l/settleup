@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { Computed } from '../compute';
-import { markSent, unmarkSent, updateMember } from '../edit';
+import { compute, type Computed } from '../compute';
+import { markSent, setTransferMode, unmarkSent, updateMember } from '../edit';
 import { dateLabel, num, roundLabel, won } from '../format';
-import type { Meeting } from '../model';
+import type { Meeting, TransferMode } from '../model';
 import { encodeMeeting, paymentText, shareLink, shareText } from '../share';
 import { Segmented } from './controls';
 import { Avatars } from './Avatars';
 import { Breakdown } from './Breakdown';
 import { FriendSheet } from './FriendSheet';
-import { ImageSheet } from './ImageSheet';
+import { ImageSheet, type ImageKind } from './ImageSheet';
 import { PayTo } from './PayTo';
 import { useReceiptImage } from './useReceiptImage';
 
@@ -25,11 +25,16 @@ const SHARE_BASE: string = import.meta.env.VITE_SHARE_BASE || `${location.origin
 
 const UNITS = [1, 10, 100, 1000].map((unit) => ({ value: unit, label: `${num(unit)}원` }));
 
+const MODES: { value: TransferMode; label: string }[] = [
+  { value: 'direct', label: '결제한 사람에게' },
+  { value: 'minimal', label: '송금 횟수 최소' },
+];
+
 export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) {
   const [open, setOpen] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [manualCopy, setManualCopy] = useState<string | null>(null);
-  const [showImage, setShowImage] = useState(false);
+  const [showImage, setShowImage] = useState<ImageKind | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const image = useReceiptImage(meeting);
   const name = (id: string) => meeting.members.find((f) => f.id === id)?.name ?? id;
@@ -69,6 +74,9 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
 
   const { result } = computed;
   const total = result.rounds.reduce((sum, r) => sum + r.charged, 0);
+  const mode = meeting.transferMode ?? 'direct';
+  const other = compute({ ...meeting, transferMode: mode === 'direct' ? 'minimal' : 'direct' });
+  const otherCount = other.ok ? other.result.transfers.length : result.transfers.length;
 
   const copy = (text: string, done: string) => {
     if (!navigator.clipboard?.writeText) {
@@ -180,6 +188,22 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
           ))}
         </ul>
         {result.transfers.length === 0 && meeting.repayments.length > 0 && <p className="receipt-done">정산 끝! 모두 보냈어요.</p>}
+        {result.transfers.length > 0 && (
+          <p className="receipt-mode">
+            {mode === 'direct'
+              ? '각자 그 차수에 결제한 사람에게 보내요. 두 사람 사이에 오가는 돈만 서로 뺐어요.'
+              : '송금 횟수를 줄이려고 모든 차수를 합쳐 계산했어요. 결제한 사람이 받을 돈을 다른 사람이 대신 받을 수 있어요.'}
+            {otherCount !== result.transfers.length && (
+              <button
+                type="button"
+                className="link"
+                onClick={() => onChange(setTransferMode(meeting, mode === 'direct' ? 'minimal' : 'direct'))}
+              >
+                {mode === 'direct' ? `송금 ${otherCount}건으로 줄이기` : '결제한 사람에게 바로 보내기로'}
+              </button>
+            )}
+          </p>
+        )}
 
         <h2 className="receipt-section">사람별</h2>
         <div className="people-head" aria-hidden="true">
@@ -238,7 +262,7 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
         </ul>
       </article>
 
-      <Breakdown meeting={meeting} result={result} />
+      <Breakdown meeting={meeting} result={result} onShareImage={() => setShowImage('table')} />
 
       <PayTo transfers={result.transfers} members={meeting.members} onCopy={copy} onEdit={setEditing} />
 
@@ -247,7 +271,7 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
           단톡방에 공유하기
         </button>
         <div className="share-row">
-          <button type="button" className="btn btn-outline" onClick={() => setShowImage(true)}>
+          <button type="button" className="btn btn-outline" onClick={() => setShowImage('receipt')}>
             이미지만
           </button>
           <button type="button" className="btn btn-outline" onClick={sharePayment}>
@@ -278,7 +302,16 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
         <p className="hint center">
           '단톡방에 공유하기'는 이미지·정산 내용·링크를 한 번에, '송금 안내만'은 누가 얼마를 어디로 보낼지만 글로 보내요. 고친 뒤엔 다시 공유해 주세요.
         </p>
-        {showImage && <ImageSheet meeting={meeting} image={image} onClose={() => setShowImage(false)} notify={notify} />}
+        {showImage && (
+          <ImageSheet
+            meeting={meeting}
+            receipt={image}
+            kind={showImage}
+            onKind={setShowImage}
+            onClose={() => setShowImage(null)}
+            notify={notify}
+          />
+        )}
         {editing && meeting.members.some((f) => f.id === editing) && (
           <FriendSheet
             friend={meeting.members.find((f) => f.id === editing)!}
@@ -289,6 +322,13 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
       </div>
 
       <section className="section">
+        <div className="field">
+          <span className="field-label">
+            송금 방식{' '}
+            <span className="field-note">{mode === 'direct' ? '각자 결제한 사람에게' : '차수를 합쳐 송금 횟수 최소'}</span>
+          </span>
+          <Segmented label="송금 방식" value={mode} options={MODES} onChange={(next) => onChange(setTransferMode(meeting, next))} />
+        </div>
         <div className="field">
           <span className="field-label">
             정산 단위 <span className="field-note">자투리는 결제한 사람이 떠안아요</span>

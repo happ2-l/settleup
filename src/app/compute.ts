@@ -19,7 +19,7 @@ export function compute(meeting: Meeting): Computed {
           })),
           repayments: meeting.repayments,
         },
-        { unit: meeting.unit },
+        { unit: meeting.unit, transfers: meeting.transferMode ?? 'direct' },
       ),
     };
   } catch (e) {

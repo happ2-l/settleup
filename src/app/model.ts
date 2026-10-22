@@ -24,6 +24,9 @@ export interface MeetingRound extends Round {
   multiPay?: boolean;
 }
 
+/** direct: 각자 그 차수 결제한 사람에게 / minimal: 차수를 합쳐 송금 횟수 최소 */
+export type TransferMode = 'direct' | 'minimal';
+
 export interface Meeting {
   id: string;
   title: string;
@@ -35,6 +38,8 @@ export interface Meeting {
   repayments: Transfer[];
   /** 정산 단위 (1, 10, 100, 1000원) */
   unit: number;
+  /** 송금 방식. 없으면 'direct' (각자 그 차수 결제한 사람에게) */
+  transferMode?: TransferMode;
   updatedAt: number;
   /** 처음 열었을 때 보여주는 예시 */
   sample?: boolean;

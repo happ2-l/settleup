@@ -30,6 +30,7 @@ export async function decodeMeeting(code: string): Promise<Meeting> {
     rounds: data.rounds,
     repayments: data.repayments ?? [],
     unit: data.unit ?? 1,
+    ...(data.transferMode ? { transferMode: data.transferMode } : {}),
     updatedAt: data.updatedAt ?? 0,
   };
 }

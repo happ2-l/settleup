@@ -1,10 +1,10 @@
 import { SettleError } from './errors';
 import { splitRound } from './round';
-import { minimizeTransfers } from './transfers';
+import { directTransfers, minimizeTransfers } from './transfers';
 import { indexMembers, isWon } from './validate';
 import type { Gathering, MemberId, MemberResult, SettleOptions, SettlementResult } from './types';
 
-/** 모임 전체를 정산한다: 차수별 부담액 → 사람별 잔액 → 최소 송금 목록 */
+/** 모임 전체를 정산한다: 차수별 부담액 → 사람별 잔액 → 송금 목록 (기본은 최소 횟수) */
 export function settle(gathering: Gathering, options: SettleOptions = {}): SettlementResult {
   const unit = options.unit ?? 1;
   if (!Number.isSafeInteger(unit) || unit < 1) {
@@ -51,5 +51,14 @@ export function settle(gathering: Gathering, options: SettleOptions = {}): Settl
     balances[m.memberId] = m.balance;
   }
 
-  return { rounds, members: [...summary.values()], transfers: minimizeTransfers(balances) };
+  const transfers =
+    options.transfers === 'direct'
+      ? directTransfers(
+          rounds.map((r, i) => ({ shares: r.shares, payments: gathering.rounds[i]!.payments })),
+          gathering.repayments ?? [],
+          gathering.members.map((m) => m.id),
+        )
+      : minimizeTransfers(balances);
+
+  return { rounds, members: [...summary.values()], transfers };
 }
