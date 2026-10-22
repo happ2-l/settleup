@@ -1214,6 +1214,41 @@ input::placeholder {
   resize: vertical;
 }
 
+.share-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.image-preview {
+  max-height: 58dvh;
+  overflow-y: auto;
+  background: var(--accent);
+  border-radius: 12px;
+}
+
+.image-preview img {
+  display: block;
+  width: 100%;
+}
+
+.image-preview .hint {
+  padding: 48px 16px;
+  color: var(--accent-ink);
+}
+
+.image-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+}
+
+.image-actions .btn {
+  text-align: center;
+  text-decoration: none;
+}
+
 .danger-zone {
   display: flex;
   justify-content: center;

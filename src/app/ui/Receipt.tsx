@@ -5,6 +5,7 @@ import { dateLabel, num, roundLabel, won } from '../format';
 import type { Meeting } from '../model';
 import { encodeMeeting, shareLink, shareText } from '../share';
 import { Segmented } from './controls';
+import { ImageSheet } from './ImageSheet';
 
 interface Props {
   meeting: Meeting;
@@ -23,6 +24,7 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
   const [open, setOpen] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [manualCopy, setManualCopy] = useState<string | null>(null);
+  const [showImage, setShowImage] = useState(false);
   const name = (id: string) => meeting.members.find((f) => f.id === id)?.name ?? id;
 
   // 링크는 미리 만들어 둔다. 아이폰 사파리는 버튼을 누른 직후에만 복사·공유를 허락해서
@@ -214,9 +216,14 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
         <button type="button" className="btn btn-primary btn-block" onClick={() => share('share')} disabled={!code}>
           단톡방에 공유하기
         </button>
-        <button type="button" className="btn btn-outline btn-block" onClick={() => share('link')} disabled={!code}>
-          링크만 복사
-        </button>
+        <div className="share-row">
+          <button type="button" className="btn btn-outline" onClick={() => setShowImage(true)}>
+            이미지로 공유
+          </button>
+          <button type="button" className="btn btn-outline" onClick={() => share('link')} disabled={!code}>
+            링크만 복사
+          </button>
+        </div>
         {manualCopy && (
           <div className="copy-box">
             <label className="field-label" htmlFor="share-text">
@@ -236,6 +243,7 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
           </div>
         )}
         <p className="hint center">링크에는 지금 내용이 그대로 담겨요. 나중에 고치면 다시 공유해 주세요.</p>
+        {showImage && <ImageSheet meeting={meeting} onClose={() => setShowImage(false)} notify={notify} />}
       </div>
 
       <section className="section">
