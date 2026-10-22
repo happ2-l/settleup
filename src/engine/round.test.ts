@@ -181,3 +181,10 @@ describe('splitRound: 잘못된 입력', () => {
     );
   });
 });
+
+describe('splitRound: 이름 없는 항목', () => {
+  it('항목 이름이 빈 문자열이면 카테고리나 "항목"으로 부른다', () => {
+    const r = round({ total: 30_000, participants: people('철수'), items: [{ name: ' ', amount: 10_000, shares: {} }] });
+    expect(() => splitRound(r, members)).toThrow("1차: '항목'을(를) 나눠 낼 사람이 없습니다");
+  });
+});

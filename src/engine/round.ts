@@ -42,7 +42,7 @@ export function splitRound(round: Round, members: readonly Member[], options: Se
       if (item === common) continue;
       throw new SettleError(
         'ITEM_NO_CONSUMER',
-        `${label(round)}: '${item.name ?? item.category ?? '항목'}'을(를) 나눠 낼 사람이 없습니다`,
+        `${label(round)}: '${item.name?.trim() || item.category || '항목'}'을(를) 나눠 낼 사람이 없습니다`,
         round.id,
       );
     }
@@ -112,7 +112,7 @@ function validateRound(round: Round, members: ReadonlyMap<MemberId, Member>): vo
 
   let itemSum = 0;
   for (const item of round.items ?? []) {
-    const itemName = item.name ?? item.category ?? '항목';
+    const itemName = item.name?.trim() || item.category || '항목';
     if (!isWon(item.amount)) fail('INVALID_AMOUNT', `'${itemName}' 금액은 0 이상의 정수(원)여야 합니다`);
     itemSum += item.amount;
     for (const [id, w] of Object.entries(item.shares ?? {})) {

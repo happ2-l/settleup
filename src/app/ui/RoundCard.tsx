@@ -8,6 +8,8 @@ import {
   payerOf,
   removeItem,
   setAlcohol,
+  setAllAttending,
+  setAllEaters,
   setDiscount,
   setDrinks,
   setFixed,
@@ -22,7 +24,7 @@ import {
 } from '../edit';
 import { num, participantTags, roundLabel, WEIGHT_PRESETS, won } from '../format';
 import { ALCOHOL, type Friend, type MeetingRound } from '../model';
-import { ConfirmButton, MoneyInput, Segmented, Sheet } from './controls';
+import { ConfirmButton, MoneyInput, PeoplePicker, Segmented, Sheet } from './controls';
 
 interface Props {
   index: number;
@@ -124,34 +126,43 @@ export function RoundCard({ index, round, members, shares, error, onChange, onRe
         </div>
       </div>
 
-      <div className="attendees">
-        <p className="field-label">
-          누가 있었나요 <span className="field-note">눌러서 술·먼저 감·고정금액 설정</span>
-        </p>
-        <ul className="chips">
-          {members.map((f) => {
-            const p = round.participants.find((x) => x.memberId === f.id);
-            const tags = p ? participantTags(p) : [];
-            return (
-              <li key={f.id}>
-                <button
-                  type="button"
-                  className={`chip ${p ? 'chip-in' : 'chip-out'}`}
-                  aria-label={p ? `${f.name} 설정` : `${f.name} 참석으로 바꾸기`}
-                  onClick={() => (p ? setPerson(f.id) : onChange((r) => toggleAttendance(r, f.id, members)))}
-                >
-                  {p ? f.name : `+ ${f.name}`}
-                  {tags.map((t) => (
-                    <span key={t} className="chip-tag">
-                      {t}
-                    </span>
-                  ))}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+      <PeoplePicker
+        label="누가 있었나요"
+        people={members}
+        isSelected={(memberId) => isAttending(round, memberId)}
+        onToggle={(memberId) => onChange((r) => toggleAttendance(r, memberId, members))}
+        onAll={(all) => onChange((r) => setAllAttending(r, all, members))}
+      />
+
+      {round.participants.length > 0 && (
+        <div className="exceptions">
+          <p className="field-label">
+            예외 <span className="field-note">술 안 마심·먼저 감·더 냄·금액 고정은 이름을 눌러서</span>
+          </p>
+          <ul className="chips chips-small">
+            {round.participants.map((p) => {
+              const tags = participantTags(p);
+              return (
+                <li key={p.memberId}>
+                  <button
+                    type="button"
+                    className={`chip chip-set ${tags.length ? 'has-tags' : ''}`}
+                    aria-label={`${name(p.memberId)} 예외 설정${tags.length ? `: ${tags.join(', ')}` : ''}`}
+                    onClick={() => setPerson(p.memberId)}
+                  >
+                    {name(p.memberId)}
+                    {tags.map((t) => (
+                      <span key={t} className="chip-tag">
+                        {t}
+                      </span>
+                    ))}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
 
       {menus.length > 0 && (
         <div className="menus">
@@ -164,7 +175,7 @@ export function RoundCard({ index, round, members, shares, error, onChange, onRe
                 <input
                   id={id(`menu-${i}-name`)}
                   className="menu-name"
-                  placeholder="메뉴 (예: 랍스터)"
+                  placeholder="메뉴 이름"
                   value={item.name ?? ''}
                   onChange={(e) => onChange((r) => updateItem(r, i, { name: e.target.value }))}
                 />
@@ -178,23 +189,18 @@ export function RoundCard({ index, round, members, shares, error, onChange, onRe
                   ✕
                 </button>
               </div>
-              <ul className="chips chips-small" aria-label="먹은 사람">
-                {round.participants.map((p) => {
-                  const ate = !!item.shares && p.memberId in item.shares;
-                  return (
-                    <li key={p.memberId}>
-                      <button
-                        type="button"
-                        className={`chip ${ate ? 'chip-in' : 'chip-out'}`}
-                        aria-pressed={ate}
-                        onClick={() => onChange((r) => toggleEater(r, i, p.memberId))}
-                      >
-                        {name(p.memberId)}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+              {round.participants.length > 0 ? (
+                <PeoplePicker
+                  small
+                  label="누가 먹었나요"
+                  people={round.participants.map((p) => ({ id: p.memberId, name: name(p.memberId) }))}
+                  isSelected={(memberId) => !!item.shares && memberId in item.shares}
+                  onToggle={(memberId) => onChange((r) => toggleEater(r, i, memberId))}
+                  onAll={(all) => onChange((r) => setAllEaters(r, i, all))}
+                />
+              ) : (
+                <p className="hint">위 '누가 있었나요'에서 참석자를 먼저 골라 주세요.</p>
+              )}
             </div>
           ))}
         </div>

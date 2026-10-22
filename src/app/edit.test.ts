@@ -8,6 +8,8 @@ import {
   markSent,
   removeMember,
   setAlcohol,
+  setAllAttending,
+  setAllEaters,
   setDiscount,
   setDrinks,
   setFixed,
@@ -123,6 +125,23 @@ describe('차수', () => {
     expect(r.items![0]!.shares).toEqual({});
     r = toggleAttendance(toggleAttendance(r, 민수!, m.members), 철수!, m.members);
     expect(r.participants.map((p) => p.memberId)).toEqual([철수, m.members[1]!.id]);
+  });
+
+  it('전원 참석은 멤버 순서대로 넣고 기존 예외는 유지, 모두 빼기는 메뉴 나눔도 비운다', () => {
+    const m = addRound(withFriends('철수 영희 민수'));
+    const { 철수, 영희, 민수 } = ids(m);
+    let r = setDrinks(m.rounds[0]!, 영희!, false);
+    r = toggleAttendance(toggleAttendance(r, 철수!, m.members), 민수!, m.members);
+    r = setAllAttending(r, true, m.members);
+    expect(r.participants).toEqual([{ memberId: 철수 }, { memberId: 영희, excludes: ['술'] }, { memberId: 민수 }]);
+
+    r = setAllEaters(updateItem(addMenuItem(r), 0, { amount: 9_000 }), 0, true);
+    expect(r.items![0]!.shares).toEqual({ [철수!]: 1, [영희!]: 1, [민수!]: 1 });
+    expect(setAllEaters(r, 0, false).items![0]!.shares).toEqual({});
+
+    r = setAllAttending(r, false, m.members);
+    expect(r.participants).toEqual([]);
+    expect(r.items![0]!.shares).toEqual({});
   });
 
   it('참석자 예외: 술, 비율, 고정금액을 켜고 끈다', () => {

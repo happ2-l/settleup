@@ -110,6 +110,61 @@ export function Segmented<T>({ label, options, value, onChange }: SegmentedProps
   );
 }
 
+interface PeoplePickerProps {
+  label: string;
+  people: { id: string; name: string }[];
+  isSelected: (id: string) => boolean;
+  onToggle: (id: string) => void;
+  onAll: (selected: boolean) => void;
+  small?: boolean;
+}
+
+/** 이름을 누를 때마다 넣었다 뺐다. 전원 / 모두 빼기 버튼 포함 */
+export function PeoplePicker({ label, people, isSelected, onToggle, onAll, small }: PeoplePickerProps) {
+  const count = people.filter((p) => isSelected(p.id)).length;
+
+  return (
+    <div className="picker" role="group" aria-label={label}>
+      <div className="picker-head">
+        <span className="field-label">
+          {label}{' '}
+          <span className="field-note">
+            {count}/{people.length}명
+          </span>
+        </span>
+        <span className="picker-bulk">
+          <button type="button" className="link" onClick={() => onAll(true)} disabled={count === people.length}>
+            전원
+          </button>
+          <button type="button" className="link" onClick={() => onAll(false)} disabled={count === 0}>
+            모두 빼기
+          </button>
+        </span>
+      </div>
+      <ul className={`chips ${small ? 'chips-small' : ''}`}>
+        {people.map((p) => {
+          const selected = isSelected(p.id);
+          return (
+            <li key={p.id}>
+              <button
+                type="button"
+                className={`chip ${selected ? 'chip-in' : 'chip-out'}`}
+                aria-pressed={selected}
+                onClick={() => onToggle(p.id)}
+              >
+                <span className="chip-check" aria-hidden="true">
+                  {selected ? '✓' : ''}
+                </span>
+                {p.name}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 /** 한 번 누르면 '정말 ~할까요?'로 바뀌고 다시 눌러야 실행되는 버튼 */
 export function ConfirmButton({ label, confirmLabel, onConfirm }: { label: string; confirmLabel: string; onConfirm: () => void }) {
   const [armed, setArmed] = useState(false);

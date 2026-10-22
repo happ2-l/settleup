@@ -146,6 +146,16 @@ export function toggleAttendance(r: MeetingRound, id: MemberId, order: readonly 
   return { ...r, participants };
 }
 
+/** 전원 참석 (이미 있던 사람의 예외 설정은 유지) 또는 모두 빼기 */
+export function setAllAttending(r: MeetingRound, attending: boolean, order: readonly Friend[]): MeetingRound {
+  if (!attending) {
+    const items = r.items?.map((item) => (item.shares ? { ...item, shares: {} } : item));
+    return { ...r, participants: [], ...(items ? { items } : {}) };
+  }
+  const existing = new Map(r.participants.map((p) => [p.memberId, p]));
+  return { ...r, participants: order.map((f) => existing.get(f.id) ?? { memberId: f.id }) };
+}
+
 function patchParticipant(r: MeetingRound, id: MemberId, fn: (p: Participant) => Participant): MeetingRound {
   return { ...r, participants: r.participants.map((p) => (p.memberId === id ? fn(p) : p)) };
 }
@@ -188,6 +198,12 @@ export function toggleEater(r: MeetingRound, index: number, id: MemberId): Meeti
       return { ...item, shares: id in shares ? omitKey(shares, id) : { ...shares, [id]: 1 } };
     }),
   };
+}
+
+/** 이번 차수 참석자 전원이 먹음, 또는 아무도 선택 안 함 */
+export function setAllEaters(r: MeetingRound, index: number, all: boolean): MeetingRound {
+  const shares = all ? Object.fromEntries(r.participants.map((p) => [p.memberId, 1])) : {};
+  return { ...r, items: (r.items ?? []).map((item, i) => (i === index ? { ...item, shares } : item)) };
 }
 
 // ── 송금 ──────────────────────────────────────────────

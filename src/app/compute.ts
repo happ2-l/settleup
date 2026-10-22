@@ -12,7 +12,11 @@ export function compute(meeting: Meeting): Computed {
       result: settle(
         {
           members: meeting.members,
-          rounds: meeting.rounds.map((r, i) => ({ ...r, name: roundLabel(r.name, i) })),
+          rounds: meeting.rounds.map((r, i) => ({
+            ...r,
+            name: roundLabel(r.name, i),
+            ...(r.items ? { items: r.items.map((item) => (item.name?.trim() ? item : { ...item, name: '이름 없는 메뉴' })) } : {}),
+          })),
           repayments: meeting.repayments,
         },
         { unit: meeting.unit },
