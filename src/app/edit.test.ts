@@ -45,12 +45,14 @@ describe('멤버', () => {
     expect(m.rounds[0]!.participants.map((p) => p.memberId)).toEqual(m.members.map((f) => f.id));
   });
 
-  it('계좌를 지우면 필드가 없어진다', () => {
+  it('받는 곳은 정리해서 저장하고, 다 지우면 필드가 없어진다', () => {
     const m = withFriends('철수');
     const id = m.members[0]!.id;
-    const withAccount = updateMember(m, id, { account: ' 카카오뱅크 3333 ' });
-    expect(withAccount.members[0]!.account).toBe('카카오뱅크 3333');
-    expect('account' in updateMember(withAccount, id, { account: '' }).members[0]!).toBe(false);
+    const withPay = updateMember(m, id, {
+      pay: { bank: ' 카카오뱅크 ', accountNo: '3333-00-0000000', holder: '', toss: 'https://toss.me/abc/', kakaopay: 'not a link' },
+    });
+    expect(withPay.members[0]!.pay).toEqual({ bank: '카카오뱅크', accountNo: '3333-00-0000000', toss: 'abc' });
+    expect('pay' in updateMember(withPay, id, { pay: { bank: '', accountNo: ' ' } }).members[0]!).toBe(false);
   });
 
   it('빈 이름으로는 바뀌지 않는다', () => {

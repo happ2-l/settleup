@@ -1,6 +1,7 @@
 import type { SettlementResult } from '../engine';
 import { dateLabel, num, roundLabel } from './format';
 import type { Meeting } from './model';
+import { accountCopyText, hasPay } from './pay';
 
 // 단톡방에 올릴 영수증 이미지. 초록 바탕 위에 위아래가 톱니로 찢긴 감열지 한 장.
 // 화면 CSS를 캡처하지 않고 캔버스에 직접 그려서 어느 폰에서나 같은 모양이 나온다.
@@ -274,12 +275,42 @@ function layout(ctx: CanvasRenderingContext2D, meeting: Meeting, result: Settlem
     list.push({ height: 96, draw: (c, top) => stamp(c, W / 2, top + 48, '정산 끝', 56) });
   }
 
-  // ── 받을 사람 계좌
+  // ── 받는 곳: 왼쪽에 이름, 오른쪽에 계좌·예금주·토스·카카오페이를 줄줄이
   const receivers = new Set(result.transfers.map((t) => t.to));
-  const accounts = meeting.members.filter((f) => receivers.has(f.id) && f.account);
-  if (accounts.length > 0) {
-    gap(18);
-    for (const f of accounts) row(`${f.name} 계좌`, f.account!, { size: 28, height: 46 });
+  const payees = meeting.members.filter((f) => receivers.has(f.id) && hasPay(f));
+  if (payees.length > 0) {
+    gap(28);
+    double();
+    gap(34);
+    section('받는 곳');
+    for (const f of payees) {
+      const p = f.pay!;
+      const lines: { text: string; font: string; color: string }[] = [];
+      const account = accountCopyText(p);
+      if (account) lines.push({ text: account, font: font('mono', 30, 500), color: COLOR.ink });
+      if (account && p.holder) lines.push({ text: `예금주 ${p.holder}`, font: font('body', 24), color: COLOR.muted });
+      if (p.toss) lines.push({ text: `토스 toss.me/${p.toss}`, font: font('mono', 26), color: COLOR.muted });
+      if (p.kakaopay) lines.push({ text: '카카오페이로도 받아요 · 링크는 메시지에', font: font('body', 24), color: COLOR.muted });
+      const who = fitText(f.name, 220, widthIn(font('body', 32, 500)));
+      const fitted = lines.map((l) => ({ ...l, text: fitText(l.text, CONTENT - 250, widthIn(l.font)) }));
+      texts.push(who, ...fitted.map((l) => l.text));
+      const height = fitted.length * 42 + 16;
+      list.push({
+        height,
+        draw: (c, top) => {
+          c.font = font('body', 32, 500);
+          c.fillStyle = COLOR.ink;
+          c.textAlign = 'left';
+          c.fillText(who, LEFT, top + 24);
+          c.textAlign = 'right';
+          fitted.forEach((l, i) => {
+            c.font = l.font;
+            c.fillStyle = l.color;
+            c.fillText(l.text, RIGHT, top + 24 + i * 42);
+          });
+        },
+      });
+    }
   }
   gap(28);
   double();

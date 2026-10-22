@@ -1,6 +1,7 @@
 import type { SettlementResult } from '../engine';
 import { won } from './format';
 import type { Meeting } from './model';
+import { migrateFriend, payLines } from './pay';
 
 // 공유 링크: 정산 내용을 통째로 URL에 담는다. 서버 없이 링크만으로 친구가 같은 화면을 본다.
 // 형식: 'z' + base64url(deflate(JSON)), 압축을 못 쓰는 브라우저면 'j' + base64url(JSON)
@@ -25,7 +26,7 @@ export async function decodeMeeting(code: string): Promise<Meeting> {
     id: data.id,
     title: data.title ?? '',
     date: data.date ?? '',
-    members: data.members,
+    members: data.members.map(migrateFriend),
     rounds: data.rounds,
     repayments: data.repayments ?? [],
     unit: data.unit ?? 1,
@@ -48,11 +49,8 @@ export function shareText(meeting: Meeting, result: SettlementResult, link?: str
     for (const t of result.transfers) lines.push(`${name(t.from)} → ${name(t.to)} ${won(t.amount)}`);
   }
   const receivers = new Set(result.transfers.map((t) => t.to));
-  const accounts = meeting.members.filter((f) => receivers.has(f.id) && f.account);
-  if (accounts.length) {
-    lines.push('');
-    for (const f of accounts) lines.push(`${f.name} 계좌: ${f.account}`);
-  }
+  const pay = meeting.members.filter((f) => receivers.has(f.id)).flatMap(payLines);
+  if (pay.length) lines.push('', '받는 곳', ...pay);
   if (link) lines.push('', `자세히: ${link}`);
   return lines.join('\n');
 }

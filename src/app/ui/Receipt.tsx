@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import type { Computed } from '../compute';
-import { markSent, unmarkSent } from '../edit';
+import { markSent, unmarkSent, updateMember } from '../edit';
 import { dateLabel, num, roundLabel, won } from '../format';
 import type { Meeting } from '../model';
 import { encodeMeeting, shareLink, shareText } from '../share';
 import { Segmented } from './controls';
+import { FriendSheet } from './FriendSheet';
 import { ImageSheet } from './ImageSheet';
+import { PayTo } from './PayTo';
+import { useReceiptImage } from './useReceiptImage';
 
 interface Props {
   meeting: Meeting;
@@ -25,6 +28,8 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
   const [code, setCode] = useState<string | null>(null);
   const [manualCopy, setManualCopy] = useState<string | null>(null);
   const [showImage, setShowImage] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const image = useReceiptImage(meeting);
   const name = (id: string) => meeting.members.find((f) => f.id === id)?.name ?? id;
 
   // 링크는 미리 만들어 둔다. 아이폰 사파리는 버튼을 누른 직후에만 복사·공유를 허락해서
@@ -90,7 +95,10 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
       copy(text, done);
       return;
     }
-    navigator.share({ text }).catch((e: unknown) => {
+    // 영수증 이미지가 준비됐고 파일 공유가 되는 폰이면 이미지와 글을 같이 보낸다
+    const file = image && image !== 'failed' ? image.file : null;
+    const withImage = !!file && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file], text });
+    navigator.share(withImage ? { files: [file!], text } : { text }).catch((e: unknown) => {
       if (!(e instanceof DOMException && e.name === 'AbortError')) copy(text, done);
     });
   };
@@ -212,6 +220,8 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
         </ul>
       </article>
 
+      <PayTo transfers={result.transfers} members={meeting.members} onCopy={copy} onEdit={setEditing} />
+
       <div className="share-actions">
         <button type="button" className="btn btn-primary btn-block" onClick={() => share('share')} disabled={!code}>
           단톡방에 공유하기
@@ -242,8 +252,15 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
             </button>
           </div>
         )}
-        <p className="hint center">링크에는 지금 내용이 그대로 담겨요. 나중에 고치면 다시 공유해 주세요.</p>
-        {showImage && <ImageSheet meeting={meeting} onClose={() => setShowImage(false)} notify={notify} />}
+        <p className="hint center">영수증 이미지와 정산 내용·링크를 같이 보내요. 링크는 지금 내용 그대로라, 나중에 고치면 다시 공유해 주세요.</p>
+        {showImage && <ImageSheet meeting={meeting} image={image} onClose={() => setShowImage(false)} notify={notify} />}
+        {editing && meeting.members.some((f) => f.id === editing) && (
+          <FriendSheet
+            friend={meeting.members.find((f) => f.id === editing)!}
+            onClose={() => setEditing(null)}
+            onChange={(patch) => onChange(updateMember(meeting, editing, patch))}
+          />
+        )}
       </div>
 
       <section className="section">

@@ -1,4 +1,5 @@
 import type { Meeting } from './model';
+import { migrateFriend } from './pay';
 
 const KEY = 'settleup:v1';
 
@@ -8,7 +9,8 @@ export function loadMeetings(): Meeting[] | null {
     const raw = localStorage.getItem(KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as { meetings?: Meeting[] };
-    return Array.isArray(data.meetings) ? data.meetings : null;
+    if (!Array.isArray(data.meetings)) return null;
+    return data.meetings.map((m) => ({ ...m, members: m.members.map(migrateFriend) }));
   } catch {
     return null;
   }

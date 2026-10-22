@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { compute } from '../compute';
 import { addMembers, addRound, removeMember, removeRound, updateMember, updateRound } from '../edit';
 import type { Friend, Meeting } from '../model';
-import { ConfirmButton, Sheet } from './controls';
+import { hasPay } from '../pay';
+import { ConfirmButton } from './controls';
+import { FriendSheet } from './FriendSheet';
 import { Receipt } from './Receipt';
 import { RoundCard } from './RoundCard';
 
@@ -141,7 +143,7 @@ function Friends({ meeting, onChange }: { meeting: Meeting; onChange: (m: Meetin
             <li key={f.id}>
               <button type="button" className="chip chip-friend" onClick={() => setEditing(f)}>
                 {f.name}
-                {f.account && <span className="chip-tag">계좌</span>}
+                {hasPay(f) && <span className="chip-tag">받는 곳</span>}
               </button>
             </li>
           ))}
@@ -182,45 +184,5 @@ function Friends({ meeting, onChange }: { meeting: Meeting; onChange: (m: Meetin
         />
       )}
     </section>
-  );
-}
-
-interface FriendSheetProps {
-  friend: Friend;
-  onClose: () => void;
-  onChange: (patch: { name?: string; account?: string }) => void;
-  onRemove: () => void;
-}
-
-function FriendSheet({ friend, onClose, onChange, onRemove }: FriendSheetProps) {
-  const [name, setName] = useState(friend.name);
-  const [account, setAccount] = useState(friend.account ?? '');
-
-  const close = () => {
-    onChange({ name, account });
-    onClose();
-  };
-
-  return (
-    <Sheet title={friend.name} subtitle="이름과 송금받을 계좌" onClose={close}>
-      <label className="field">
-        <span className="field-label">이름</span>
-        <input id="friend-edit-name" value={name} onChange={(e) => setName(e.target.value)} autoComplete="off" />
-      </label>
-      <label className="field">
-        <span className="field-label">계좌 (선택)</span>
-        <input
-          id="friend-edit-account"
-          placeholder="예: 카카오뱅크 3333-01-1234567"
-          value={account}
-          onChange={(e) => setAccount(e.target.value)}
-          autoComplete="off"
-        />
-        <span className="hint">이 친구가 돈을 받을 때 공유 문구에 같이 적혀요.</span>
-      </label>
-      <div className="sheet-actions">
-        <ConfirmButton label="모임에서 빼기" confirmLabel="모든 차수에서도 빠져요. 한 번 더 누르기" onConfirm={onRemove} />
-      </div>
-    </Sheet>
   );
 }

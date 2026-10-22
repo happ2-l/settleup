@@ -3,9 +3,20 @@ import type { Member, Round, Transfer } from '../engine';
 /** 정산에 쓰는 카테고리. 참석자의 excludes와 술값 항목이 이 이름으로 연결된다 */
 export const ALCOHOL = '술';
 
+/** 돈 받을 곳. 받는 사람만 적으면 된다 */
+export interface PayInfo {
+  bank?: string;
+  accountNo?: string;
+  /** 예금주 */
+  holder?: string;
+  /** 토스 아이디 (toss.me/아이디) */
+  toss?: string;
+  /** 카카오페이 송금 링크 (https://qr.kakaopay.com/…) */
+  kakaopay?: string;
+}
+
 export interface Friend extends Member {
-  /** 송금받을 계좌. 공유 문구에 들어감 */
-  account?: string;
+  pay?: PayInfo;
 }
 
 export interface MeetingRound extends Round {
@@ -49,7 +60,7 @@ export function sampleMeeting(): Meeting {
     title: '예시: 동기 모임',
     date: today(),
     sample: true,
-    members: [{ ...a!, account: '카카오뱅크 3333-01-1234567' }, b!, c!, d!, e!],
+    members: [{ ...a!, pay: { bank: '카카오뱅크', accountNo: '3333-00-0000000', holder: '김철수' } }, b!, c!, d!, e!],
     rounds: [
       {
         id: 'r1',

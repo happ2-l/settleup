@@ -1,5 +1,6 @@
 import type { Item, MemberId, Participant, Transfer } from '../engine';
-import { ALCOHOL, shortId, type Friend, type Meeting, type MeetingRound } from './model';
+import { ALCOHOL, shortId, type Friend, type Meeting, type MeetingRound, type PayInfo } from './model';
+import { cleanPay } from './pay';
 
 // 화면에서 쓰는 수정 함수들. 모두 새 객체를 돌려준다.
 
@@ -38,14 +39,15 @@ export function addMembers(m: Meeting, text: string): Meeting {
   });
 }
 
-export function updateMember(m: Meeting, id: MemberId, patch: { name?: string; account?: string }): Meeting {
+export function updateMember(m: Meeting, id: MemberId, patch: { name?: string; pay?: PayInfo }): Meeting {
   return touch({
     ...m,
     members: m.members.map((f) => {
       if (f.id !== id) return f;
       const next: Friend = { ...f, ...(patch.name !== undefined && patch.name.trim() ? { name: patch.name.trim() } : {}) };
-      if (patch.account === undefined) return next;
-      return patch.account.trim() ? { ...next, account: patch.account.trim() } : omit(next, 'account');
+      if (patch.pay === undefined) return next;
+      const pay = cleanPay(patch.pay);
+      return pay ? { ...next, pay } : omit(next, 'pay');
     }),
   });
 }
