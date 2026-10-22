@@ -3,7 +3,7 @@ import { compute } from './compute';
 import { markSent } from './edit';
 import { dateLabel, parseWon, participantTags } from './format';
 import { sampleMeeting } from './model';
-import { decodeMeeting, encodeMeeting, shareLink, shareText } from './share';
+import { decodeMeeting, encodeMeeting, paymentText, shareLink, shareText } from './share';
 
 describe('공유 링크', () => {
   it('인코딩한 정산을 그대로 되살린다 (예시 표시는 빠짐)', async () => {
@@ -39,12 +39,39 @@ describe('공유 링크', () => {
         '지은 → 철수 20,000원',
         '현우 → 철수 20,000원',
         '',
-        '받는 곳',
-        '철수 계좌: 카카오뱅크 3333-00-0000000 (김철수)',
+        '철수에게 보내기',
+        '카카오뱅크 3333-00-0000000 (김철수)',
         '',
         '자세히: https://x/#/s/z1',
       ].join('\n'),
     );
+  });
+
+  it('송금 안내만: 받는 사람별로 누가 얼마, 어디로', () => {
+    const meeting = {
+      ...sampleMeeting(),
+      title: '치킨',
+      members: [
+        { id: 'a', name: '가람', pay: { toss: 'garam', kakaopay: true } },
+        { id: 'b', name: '나래' },
+        { id: 'c', name: '다온' },
+      ],
+      rounds: [
+        { id: 'r', total: 30_000, participants: [{ memberId: 'a' }, { memberId: 'b' }, { memberId: 'c' }], payments: { a: 30_000 } },
+      ],
+    };
+    const computed = compute(meeting);
+    if (!computed.ok) throw computed.error;
+    expect(paymentText(meeting, computed.result)).toBe(
+      ['[치킨] 송금 안내', '', '가람에게 보내기', '나래 10,000원 · 다온 10,000원', '토스 https://toss.me/garam', '카카오페이로도 받아요'].join('\n'),
+    );
+  });
+
+  it('송금 안내: 보낼 돈이 없으면 그렇게 적는다', () => {
+    const meeting = { ...sampleMeeting(), rounds: [] };
+    const computed = compute(meeting);
+    if (!computed.ok) throw computed.error;
+    expect(paymentText(meeting, computed.result)).toBe('[예시: 동기 모임] 송금 안내\n보낼 돈이 없어요');
   });
 });
 

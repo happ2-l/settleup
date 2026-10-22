@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Friend, PayInfo } from '../model';
-import { BANKS, isKakaopayLink, normalizeTossId } from '../pay';
+import { BANKS, normalizeTossId } from '../pay';
 import { ConfirmButton, Sheet } from './controls';
 
 interface Props {
@@ -16,7 +16,6 @@ export function FriendSheet({ friend, onClose, onChange, onRemove }: Props) {
   const [name, setName] = useState(friend.name);
   const [pay, setPay] = useState<PayInfo>(friend.pay ?? {});
   const set = (key: keyof PayInfo) => (e: React.ChangeEvent<HTMLInputElement>) => setPay((p) => ({ ...p, [key]: e.target.value }));
-  const kakaopayInvalid = !!pay.kakaopay?.trim() && !isKakaopayLink(pay.kakaopay);
 
   const close = () => {
     onChange({ name, pay });
@@ -76,22 +75,16 @@ export function FriendSheet({ friend, onClose, onChange, onRemove }: Props) {
             />
           </span>
         </label>
-        <label className="field">
-          <span className="field-label field-label-small">카카오페이 송금 링크 (선택)</span>
+        <label className="check-row" htmlFor="friend-edit-kakaopay">
           <input
             id="friend-edit-kakaopay"
-            inputMode="url"
-            placeholder="https://qr.kakaopay.com/…"
-            value={pay.kakaopay ?? ''}
-            onChange={set('kakaopay')}
-            autoComplete="off"
-            autoCapitalize="none"
-            aria-invalid={kakaopayInvalid}
+            type="checkbox"
+            checked={!!pay.kakaopay}
+            onChange={(e) => setPay((p) => ({ ...p, kakaopay: e.target.checked }))}
           />
-          <span className={`hint ${kakaopayInvalid ? 'hint-warn' : ''}`}>
-            {kakaopayInvalid
-              ? '카카오페이(kakaopay.com) 링크만 저장돼요.'
-              : '카카오페이 앱 송금 화면의 송금코드(QR)에서 링크를 복사해 붙여 넣으세요.'}
+          <span>
+            카카오페이로도 받아요
+            <span className="hint">카톡방에서 바로 송금하면 돼서 링크는 필요 없어요</span>
           </span>
         </label>
       </fieldset>

@@ -290,7 +290,7 @@ function layout(ctx: CanvasRenderingContext2D, meeting: Meeting, result: Settlem
       if (account) lines.push({ text: account, font: font('mono', 30, 500), color: COLOR.ink });
       if (account && p.holder) lines.push({ text: `예금주 ${p.holder}`, font: font('body', 24), color: COLOR.muted });
       if (p.toss) lines.push({ text: `토스 toss.me/${p.toss}`, font: font('mono', 26), color: COLOR.muted });
-      if (p.kakaopay) lines.push({ text: '카카오페이로도 받아요 · 링크는 메시지에', font: font('body', 24), color: COLOR.muted });
+      if (p.kakaopay) lines.push({ text: '카카오페이로도 받아요', font: font('body', 24), color: COLOR.muted });
       const who = fitText(f.name, 220, widthIn(font('body', 32, 500)));
       const fitted = lines.map((l) => ({ ...l, text: fitText(l.text, CONTENT - 250, widthIn(l.font)) }));
       texts.push(who, ...fitted.map((l) => l.text));

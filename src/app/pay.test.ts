@@ -4,11 +4,10 @@ import {
   accountText,
   cleanPay,
   hasPay,
-  isKakaopayLink,
   migrateFriend,
   normalizeTossId,
   parseAccount,
-  payLines,
+  payMethods,
   tossLink,
 } from './pay';
 
@@ -29,18 +28,12 @@ describe('받는 곳', () => {
     expect(tossLink('chulsoo', 20_000)).toBe('https://toss.me/chulsoo/20000');
   });
 
-  it('카카오페이는 kakaopay.com https 주소만 받는다', () => {
-    expect(isKakaopayLink('https://qr.kakaopay.com/Ej7abc123')).toBe(true);
-    expect(isKakaopayLink('http://qr.kakaopay.com/Ej7abc123')).toBe(false);
-    expect(isKakaopayLink('https://evil.com/qr.kakaopay.com')).toBe(false);
-    expect(isKakaopayLink('Ej7abc123')).toBe(false);
-  });
-
-  it('빈 칸과 잘못된 링크는 지우고, 다 비면 undefined', () => {
-    expect(cleanPay({ bank: ' 토스뱅크 ', accountNo: '1000-0000-0000', toss: '', kakaopay: 'x' })).toEqual({
+  it('빈 칸은 지우고, 다 비면 undefined', () => {
+    expect(cleanPay({ bank: ' 토스뱅크 ', accountNo: '1000-0000-0000', toss: '', kakaopay: false })).toEqual({
       bank: '토스뱅크',
       accountNo: '1000-0000-0000',
     });
+    expect(cleanPay({ kakaopay: true })).toEqual({ kakaopay: true });
     expect(cleanPay({ bank: '', holder: ' ' })).toBeUndefined();
   });
 
@@ -53,12 +46,20 @@ describe('받는 곳', () => {
       pay: { bank: '신한', accountNo: '110-123' },
     });
     expect(migrateFriend({ id: 'a', name: '철수' })).toEqual({ id: 'a', name: '철수' });
+    // 잠깐 있었던 카카오페이 링크 저장값은 '카카오페이로도 받아요'로
+    expect(migrateFriend({ id: 'a', name: '철수', pay: { toss: 'cs', kakaopay: 'https://qr.kakaopay.com/X' } })).toEqual({
+      id: 'a',
+      name: '철수',
+      pay: { toss: 'cs', kakaopay: true },
+    });
   });
 
-  it('공유 글 줄', () => {
-    const f = { id: 'a', name: '철수', pay: { bank: '카카오뱅크', accountNo: '3333', toss: 'cs', kakaopay: 'https://qr.kakaopay.com/X' } };
+  it('받는 방법 줄', () => {
+    const f = { id: 'a', name: '철수', pay: { bank: '카카오뱅크', accountNo: '3333', toss: 'cs', kakaopay: true } };
     expect(hasPay(f)).toBe(true);
-    expect(payLines(f)).toEqual(['철수 계좌: 카카오뱅크 3333', '철수 토스: https://toss.me/cs', '철수 카카오페이: https://qr.kakaopay.com/X']);
+    expect(payMethods(f.pay)).toEqual(['카카오뱅크 3333', '토스 https://toss.me/cs', '카카오페이로도 받아요']);
+    expect(payMethods(undefined)).toEqual([]);
     expect(hasPay({ id: 'b', name: '영희', pay: { bank: '국민은행' } })).toBe(false);
+    expect(hasPay({ id: 'c', name: '민수', pay: { kakaopay: true } })).toBe(true);
   });
 });

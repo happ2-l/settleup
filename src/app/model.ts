@@ -11,8 +11,8 @@ export interface PayInfo {
   holder?: string;
   /** 토스 아이디 (toss.me/아이디) */
   toss?: string;
-  /** 카카오페이 송금 링크 (https://qr.kakaopay.com/…) */
-  kakaopay?: string;
+  /** 카카오페이로도 받음. 카톡방에서 바로 송금할 수 있어서 링크 없이 표시만 */
+  kakaopay?: boolean;
 }
 
 export interface Friend extends Member {

@@ -1309,6 +1309,41 @@ input::placeholder {
   border-color: var(--accent);
 }
 
+.payto-note {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.check-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--surface);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.check-row input {
+  flex-shrink: 0;
+  width: 20px;
+  min-height: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--accent);
+}
+
+.check-row > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 500;
+}
+
+.check-row .hint {
+  font-weight: 400;
+}
+
 .payto-edit {
   align-self: flex-start;
   padding: 0;
@@ -1362,8 +1397,14 @@ input::placeholder {
 
 .share-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.share-row .btn {
+  padding-inline: 6px;
+  font-size: 14px;
+  white-space: nowrap;
 }
 
 .image-preview {

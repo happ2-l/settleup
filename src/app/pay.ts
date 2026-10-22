@@ -1,6 +1,6 @@
 import type { Friend, PayInfo } from './model';
 
-// 돈 받을 곳: 은행 계좌, 토스 아이디, 카카오페이 송금 링크
+// 돈 받을 곳: 은행 계좌, 토스 아이디, 카카오페이로도 받는지
 
 /** 은행 입력칸 추천 목록 (직접 입력도 됨) */
 export const BANKS = [
@@ -61,16 +61,6 @@ export function tossLink(id: string, amount?: number): string {
   return `https://toss.me/${encodeURIComponent(id)}${amount ? `/${amount}` : ''}`;
 }
 
-/** 카카오페이 송금 링크로 쓸 수 있는 주소인지. 앱의 '송금코드'에서 복사한 https 주소 */
-export function isKakaopayLink(input: string): boolean {
-  try {
-    const url = new URL(input.trim());
-    return url.protocol === 'https:' && /(^|\.)kakaopay\.com$/.test(url.hostname);
-  } catch {
-    return false;
-  }
-}
-
 /** 예전 버전의 한 줄 계좌("카카오뱅크 3333-01-1234567")를 은행·계좌번호로 나눈다 */
 export function parseAccount(text: string): PayInfo {
   const trimmed = text.trim();
@@ -81,11 +71,16 @@ export function parseAccount(text: string): PayInfo {
   return bank ? { bank, accountNo } : { accountNo };
 }
 
-/** 예전 저장 형식(account 문자열)을 지금 형식(pay)으로 */
-export function migrateFriend(f: Friend & { account?: string }): Friend {
-  const { account, ...rest } = f;
-  if (!account || rest.pay) return rest;
-  return { ...rest, pay: parseAccount(account) };
+type LegacyFriend = Omit<Friend, 'pay'> & { account?: string; pay?: Omit<PayInfo, 'kakaopay'> & { kakaopay?: unknown } };
+
+/** 예전 저장 형식을 지금 형식으로: 한 줄 계좌(account) → pay, 카카오페이 링크 → 받음 표시 */
+export function migrateFriend(f: LegacyFriend): Friend {
+  const { account, pay, ...rest } = f;
+  if (pay) {
+    const { kakaopay, ...others } = pay;
+    return { ...rest, pay: kakaopay ? { ...others, kakaopay: true } : others };
+  }
+  return account ? { ...rest, pay: parseAccount(account) } : rest;
 }
 
 /** 빈 칸은 지우고 앞뒤 공백 정리. 다 비면 undefined */
@@ -95,23 +90,21 @@ export function cleanPay(p: PayInfo): PayInfo | undefined {
   const accountNo = p.accountNo?.trim();
   const holder = p.holder?.trim();
   const toss = p.toss ? normalizeTossId(p.toss) : '';
-  const kakaopay = p.kakaopay?.trim();
   if (bank) out.bank = bank;
   if (accountNo) out.accountNo = accountNo;
   if (holder) out.holder = holder;
   if (toss) out.toss = toss;
-  if (kakaopay && isKakaopayLink(kakaopay)) out.kakaopay = kakaopay;
+  if (p.kakaopay) out.kakaopay = true;
   return Object.keys(out).length ? out : undefined;
 }
 
-/** 공유 글에 넣을 받는 곳 줄들 */
-export function payLines(f: Friend): string[] {
-  const p = f.pay;
+/** 받는 방법 한 줄씩: 계좌, 토스, 카카오페이 */
+export function payMethods(p: PayInfo | undefined): string[] {
   if (!p) return [];
-  const lines: string[] = [];
+  const methods: string[] = [];
   const account = accountText(p);
-  if (account) lines.push(`${f.name} 계좌: ${account}`);
-  if (p.toss) lines.push(`${f.name} 토스: ${tossLink(p.toss)}`);
-  if (p.kakaopay) lines.push(`${f.name} 카카오페이: ${p.kakaopay}`);
-  return lines;
+  if (account) methods.push(account);
+  if (p.toss) methods.push(`토스 ${tossLink(p.toss)}`);
+  if (p.kakaopay) methods.push('카카오페이로도 받아요');
+  return methods;
 }

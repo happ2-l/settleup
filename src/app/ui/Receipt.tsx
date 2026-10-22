@@ -3,7 +3,7 @@ import type { Computed } from '../compute';
 import { markSent, unmarkSent, updateMember } from '../edit';
 import { dateLabel, num, roundLabel, won } from '../format';
 import type { Meeting } from '../model';
-import { encodeMeeting, shareLink, shareText } from '../share';
+import { encodeMeeting, paymentText, shareLink, shareText } from '../share';
 import { Segmented } from './controls';
 import { FriendSheet } from './FriendSheet';
 import { ImageSheet } from './ImageSheet';
@@ -80,6 +80,19 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
       },
       () => setManualCopy(text),
     );
+  };
+
+  /** 송금 안내만 글로: 이미지·링크 없이 누가 얼마, 어디로 */
+  const sharePayment = () => {
+    const text = paymentText(meeting, result);
+    const done = '송금 안내를 복사했어요. 단톡방에 붙여 넣으세요';
+    if (typeof navigator.share !== 'function') {
+      copy(text, done);
+      return;
+    }
+    navigator.share({ text }).catch((e: unknown) => {
+      if (!(e instanceof DOMException && e.name === 'AbortError')) copy(text, done);
+    });
   };
 
   const share = (mode: 'share' | 'link') => {
@@ -228,10 +241,13 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
         </button>
         <div className="share-row">
           <button type="button" className="btn btn-outline" onClick={() => setShowImage(true)}>
-            이미지로 공유
+            이미지만
+          </button>
+          <button type="button" className="btn btn-outline" onClick={sharePayment}>
+            송금 안내만
           </button>
           <button type="button" className="btn btn-outline" onClick={() => share('link')} disabled={!code}>
-            링크만 복사
+            링크만
           </button>
         </div>
         {manualCopy && (
@@ -252,7 +268,9 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
             </button>
           </div>
         )}
-        <p className="hint center">영수증 이미지와 정산 내용·링크를 같이 보내요. 링크는 지금 내용 그대로라, 나중에 고치면 다시 공유해 주세요.</p>
+        <p className="hint center">
+          '단톡방에 공유하기'는 이미지·정산 내용·링크를 한 번에, '송금 안내만'은 누가 얼마를 어디로 보낼지만 글로 보내요. 고친 뒤엔 다시 공유해 주세요.
+        </p>
         {showImage && <ImageSheet meeting={meeting} image={image} onClose={() => setShowImage(false)} notify={notify} />}
         {editing && meeting.members.some((f) => f.id === editing) && (
           <FriendSheet

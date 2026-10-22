@@ -11,7 +11,7 @@ interface Props {
   onEdit: (memberId: string) => void;
 }
 
-/** 받는 사람마다 계좌 복사, 토스·카카오페이 송금 버튼 */
+/** 받는 사람마다 계좌 복사, 토스 송금 버튼, 카카오페이 가능 여부 */
 export function PayTo({ transfers, members, onCopy, onEdit }: Props) {
   const name = (id: string) => members.find((f) => f.id === id)?.name ?? id;
   const receivers = [...new Set(transfers.map((t) => t.to))]
@@ -65,16 +65,7 @@ export function PayTo({ transfers, members, onCopy, onEdit }: Props) {
               </div>
             )}
 
-            {p.kakaopay && (
-              <div className="payto-row">
-                <span className="payto-label">카카오페이</span>
-                <div className="payto-links">
-                  <a className="btn btn-small btn-pay" href={p.kakaopay} target="_blank" rel="noopener noreferrer">
-                    카카오페이로 보내기
-                  </a>
-                </div>
-              </div>
-            )}
+            {p.kakaopay && <p className="payto-note">카카오페이로도 받아요 · 카톡방에서 바로 송금하세요</p>}
 
             <button type="button" className="link payto-edit" onClick={() => onEdit(f.id)}>
               {account || p.toss || p.kakaopay ? '받는 곳 고치기' : `+ ${f.name} 계좌·토스·카카오페이 적기`}

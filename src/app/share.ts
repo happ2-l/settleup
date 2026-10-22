@@ -1,7 +1,7 @@
 import type { SettlementResult } from '../engine';
 import { won } from './format';
 import type { Meeting } from './model';
-import { migrateFriend, payLines } from './pay';
+import { migrateFriend, payMethods } from './pay';
 
 // 공유 링크: 정산 내용을 통째로 URL에 담는다. 서버 없이 링크만으로 친구가 같은 화면을 본다.
 // 형식: 'z' + base64url(deflate(JSON)), 압축을 못 쓰는 브라우저면 'j' + base64url(JSON)
@@ -48,11 +48,35 @@ export function shareText(meeting: Meeting, result: SettlementResult, link?: str
   } else {
     for (const t of result.transfers) lines.push(`${name(t.from)} → ${name(t.to)} ${won(t.amount)}`);
   }
-  const receivers = new Set(result.transfers.map((t) => t.to));
-  const pay = meeting.members.filter((f) => receivers.has(f.id)).flatMap(payLines);
-  if (pay.length) lines.push('', '받는 곳', ...pay);
+  for (const r of receivers(meeting, result)) {
+    if (r.methods.length) lines.push('', `${r.name}에게 보내기`, ...r.methods);
+  }
   if (link) lines.push('', `자세히: ${link}`);
   return lines.join('\n');
+}
+
+/** 송금 안내만: 받는 사람별로 누가 얼마, 어디로. 이미지·링크 없이 짧게 */
+export function paymentText(meeting: Meeting, result: SettlementResult): string {
+  const lines = [`[${meeting.title || '정산'}] 송금 안내`];
+  const list = receivers(meeting, result);
+  if (list.length === 0) lines.push('보낼 돈이 없어요');
+  for (const r of list) {
+    lines.push('', `${r.name}에게 보내기`, r.from, ...r.methods);
+  }
+  return lines.join('\n');
+}
+
+/** 남은 송금을 받는 사람별로 묶는다 */
+function receivers(meeting: Meeting, result: SettlementResult) {
+  const name = (id: string) => meeting.members.find((f) => f.id === id)?.name ?? id;
+  return [...new Set(result.transfers.map((t) => t.to))].map((id) => ({
+    name: name(id),
+    from: result.transfers
+      .filter((t) => t.to === id)
+      .map((t) => `${name(t.from)} ${won(t.amount)}`)
+      .join(' · '),
+    methods: payMethods(meeting.members.find((f) => f.id === id)?.pay),
+  }));
 }
 
 async function pipe(bytes: Uint8Array, stream: CompressionStream | DecompressionStream): Promise<Uint8Array> {

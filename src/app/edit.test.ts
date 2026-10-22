@@ -49,7 +49,7 @@ describe('멤버', () => {
     const m = withFriends('철수');
     const id = m.members[0]!.id;
     const withPay = updateMember(m, id, {
-      pay: { bank: ' 카카오뱅크 ', accountNo: '3333-00-0000000', holder: '', toss: 'https://toss.me/abc/', kakaopay: 'not a link' },
+      pay: { bank: ' 카카오뱅크 ', accountNo: '3333-00-0000000', holder: '', toss: 'https://toss.me/abc/', kakaopay: false },
     });
     expect(withPay.members[0]!.pay).toEqual({ bank: '카카오뱅크', accountNo: '3333-00-0000000', toss: 'abc' });
     expect('pay' in updateMember(withPay, id, { pay: { bank: '', accountNo: ' ' } }).members[0]!).toBe(false);
