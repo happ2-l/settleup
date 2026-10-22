@@ -999,6 +999,169 @@ input::placeholder {
   text-align: right;
 }
 
+.receipt-round dt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.receipt-round {
+  padding-block: 4px;
+}
+
+/* ── 참석자 동그라미 ─────────────────────── */
+
+.avatars {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 6px;
+}
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  margin-left: -6px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  color: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+.avatars-count {
+  margin-left: 8px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.avatar-more {
+  width: auto;
+  min-width: 26px;
+  padding-inline: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+/* ── 표로 자세히 보기 ────────────────────── */
+
+.breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.breakdown summary {
+  padding: 12px 16px;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.breakdown[open] summary {
+  margin-bottom: 10px;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.breakdown-table {
+  min-width: 100%;
+  font-size: 14px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.breakdown-table th,
+.breakdown-table td {
+  padding: 9px 12px;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: top;
+  border-bottom: 1px solid var(--line);
+}
+
+.breakdown-table thead th {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  vertical-align: bottom;
+}
+
+.breakdown-table th[scope='row'],
+.breakdown-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  background: var(--paper);
+  box-shadow: 1px 0 0 var(--line);
+}
+
+.breakdown-table tbody th {
+  font-weight: 500;
+}
+
+.breakdown-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.breakdown-name .avatars {
+  padding-left: 0;
+}
+
+.breakdown-name .avatar {
+  width: 22px;
+  height: 22px;
+  margin-left: 0;
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.breakdown-table td .amount {
+  display: block;
+}
+
+.cell-tags {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.breakdown-table .is-absent {
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.breakdown-table .is-strong {
+  font-weight: 600;
+}
+
+.breakdown-table tfoot th,
+.breakdown-table tfoot td {
+  font-weight: 700;
+  border-bottom: 0;
+  background: var(--surface);
+}
+
 .receipt-sub {
   display: block;
   font-size: 12px;

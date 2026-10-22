@@ -5,6 +5,8 @@ import { dateLabel, num, roundLabel, won } from '../format';
 import type { Meeting } from '../model';
 import { encodeMeeting, paymentText, shareLink, shareText } from '../share';
 import { Segmented } from './controls';
+import { Avatars } from './Avatars';
+import { Breakdown } from './Breakdown';
 import { FriendSheet } from './FriendSheet';
 import { ImageSheet } from './ImageSheet';
 import { PayTo } from './PayTo';
@@ -129,8 +131,11 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
 
         <dl className="receipt-lines">
           {meeting.rounds.map((r, i) => (
-            <div key={r.id} className="receipt-line">
-              <dt>{roundLabel(r.name, i)}</dt>
+            <div key={r.id} className="receipt-line receipt-round">
+              <dt>
+                {roundLabel(r.name, i)}
+                <Avatars ids={r.participants.map((p) => p.memberId)} members={meeting.members} max={10} count />
+              </dt>
               <dd>
                 {num(result.rounds[i]!.charged)}
                 {r.discount ? <span className="receipt-sub">할인 −{num(r.discount)}</span> : null}
@@ -232,6 +237,8 @@ export function Receipt({ meeting, computed, onChange, onEdit, notify }: Props) 
           })}
         </ul>
       </article>
+
+      <Breakdown meeting={meeting} result={result} />
 
       <PayTo transfers={result.transfers} members={meeting.members} onCopy={copy} onEdit={setEditing} />
 

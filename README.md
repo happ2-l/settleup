@@ -27,6 +27,7 @@ npm run build       # dist/에 정적 파일 생성
 | `src/app/share.ts` | 공유 링크와 카톡 공유 문구 |
 | `src/app/pay.ts` | 받는 곳 (은행 계좌, 토스 아이디, 카카오페이로도 받는지) |
 | `src/app/receiptImage.ts` | 공유용 영수증 이미지 (캔버스에 직접 그림) |
+| `src/app/avatar.ts` | 참석자 동그라미 글자·색 |
 | `src/app/storage.ts` | 폰 브라우저에 저장 (localStorage) |
 | `src/app/ui` | 화면 (React) |
 

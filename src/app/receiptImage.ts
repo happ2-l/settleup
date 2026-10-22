@@ -1,6 +1,7 @@
 import type { SettlementResult } from '../engine';
 import { dateLabel, num, roundLabel } from './format';
 import type { Meeting } from './model';
+import { avatarColor, avatarText, visibleAvatars } from './avatar';
 import { accountCopyText, hasPay } from './pay';
 
 // 단톡방에 올릴 영수증 이미지. 초록 바탕 위에 위아래가 톱니로 찢긴 감열지 한 장.
@@ -211,10 +212,17 @@ function layout(ctx: CanvasRenderingContext2D, meeting: Meeting, result: Settlem
   dashed();
   gap(26);
 
-  // ── 차수별 금액
+  // ── 차수별 금액과 참석자 동그라미
   meeting.rounds.forEach((r, i) => {
+    if (i > 0) gap(14);
     row(roundLabel(r.name, i), num(result.rounds[i]?.charged ?? 0), { size: 32, height: 54 });
     if (r.discount) row('  할인·쿠폰', `−${num(r.discount)}`, { size: 26, height: 40, color: COLOR.muted });
+    const ids = r.participants.map((p) => p.memberId);
+    if (ids.length > 0) {
+      const labels = ids.map((id) => avatarText(name(id)));
+      texts.push(...labels);
+      list.push({ height: 66, draw: (c, top) => avatarRow(c, top + 33, ids, labels, meeting) });
+    }
   });
   gap(16);
   dashed();
@@ -367,6 +375,42 @@ function layout(ctx: CanvasRenderingContext2D, meeting: Meeting, result: Settlem
   centered(`SETTLEUP · ${meeting.date.replace(/-/g, '.')}`, font('mono', 22), COLOR.muted, 30);
 
   return { list, text: texts.join('') };
+}
+
+// 두 글자가 다 보이도록 옆 동그라미와 조금만 겹친다
+const AVATAR = 52;
+const AVATAR_STEP = 44;
+const AVATAR_MAX = 14;
+
+/** 겹쳐 놓은 참석자 동그라미 한 줄. 많으면 '+N', 끝에 'N명' */
+function avatarRow(ctx: CanvasRenderingContext2D, mid: number, ids: string[], labels: string[], meeting: Meeting) {
+  const { shown, more } = visibleAvatars(
+    ids.map((id, i) => ({ id, label: labels[i]! })),
+    AVATAR_MAX,
+  );
+  let x = LEFT + AVATAR / 2;
+  const circle = (fill: string, text: string, textColor: string, f: string) => {
+    ctx.beginPath();
+    ctx.arc(x, mid, AVATAR / 2, 0, Math.PI * 2);
+    ctx.fillStyle = fill;
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = COLOR.paper;
+    ctx.stroke();
+    ctx.font = f;
+    ctx.fillStyle = textColor;
+    ctx.textAlign = 'center';
+    ctx.fillText(text, x, mid + 1);
+    x += AVATAR_STEP;
+  };
+  for (const a of shown) {
+    circle(avatarColor(meeting.members, a.id), a.label, '#ffffff', font('body', a.label.length > 1 ? 17 : 22, 700));
+  }
+  if (more > 0) circle('#e3e9e5', `+${more}`, COLOR.ink, font('mono', 16, 600));
+  ctx.font = font('body', 24);
+  ctx.fillStyle = COLOR.muted;
+  ctx.textAlign = 'left';
+  ctx.fillText(`${ids.length}명`, x - AVATAR_STEP + AVATAR / 2 + 14, mid + 1);
 }
 
 function paperPath(ctx: CanvasRenderingContext2D, x0: number, y0: number, x1: number, y1: number) {
