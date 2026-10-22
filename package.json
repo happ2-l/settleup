@@ -5,12 +5,23 @@
   "description": "친구들과 밥 먹고 정산하는 웹앱",
   "type": "module",
   "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
     "typescript": "^7.0.2",
+    "vite": "^8.3.5",
     "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   }
 }

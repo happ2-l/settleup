@@ -1,12 +1,36 @@
 # settleup
 
-친구들이랑 밥 먹고 정산하는 웹앱. 지금은 **계산 엔진**(`src/engine`)만 있습니다.
+친구들이랑 밥 먹고 정산하는 웹앱. 폰 브라우저에서 열고, 결과는 카톡 링크로 공유합니다.
+앱스토어 설치 없이 쓰고, 원하면 홈 화면에 추가해 앱처럼 쓸 수 있습니다.
 
 ```bash
 npm install
+npm run dev         # 개발 서버 (같은 와이파이의 폰에서 표시된 Network 주소로 접속)
 npm test            # 테스트
 npm run typecheck   # 타입 검사
+npm run build       # dist/에 정적 파일 생성
 ```
+
+## 배포 (GitHub Pages)
+
+기본 브랜치에 push하면 `.github/workflows/deploy.yml`이 테스트 후 GitHub Pages에 올립니다.
+처음 한 번만 저장소 **Settings → Pages → Build and deployment → Source**를 **GitHub Actions**로 바꿔 주세요.
+주소는 `https://<계정>.github.io/settleup/`입니다.
+
+## 앱 구조
+
+| 위치 | 내용 |
+|---|---|
+| `src/engine` | 계산 엔진. 화면과 무관한 순수 함수 (아래 설명) |
+| `src/app/model.ts` | 정산 한 건(모임)의 저장 형식, 예시 데이터 |
+| `src/app/edit.ts` | 화면에서 쓰는 수정 함수 (친구 추가, 술값, 참석, 예외 설정 등) |
+| `src/app/share.ts` | 공유 링크와 카톡 공유 문구 |
+| `src/app/storage.ts` | 폰 브라우저에 저장 (localStorage) |
+| `src/app/ui` | 화면 (React) |
+
+- **저장**: 서버 없이 각자 폰 브라우저에 저장됩니다. 브라우저 기록을 지우면 사라집니다.
+- **공유**: 정산 내용 전체를 압축해서 링크 `#/s/…`에 담습니다. 링크를 연 친구의 목록에도 저장됩니다.
+  링크는 만든 시점의 내용이라, 나중에 고치면 다시 공유해야 합니다.
 
 ## 계산 엔진
 
